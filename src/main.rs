@@ -6,13 +6,16 @@ use std::{
 
 use crossterm::{
     ExecutableCommand, QueueableCommand,
+    cursor::MoveTo,
     terminal::{
         self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
         disable_raw_mode, enable_raw_mode,
     },
 };
 
-const FPS: f64 = 30.0;
+mod controls;
+
+const FPS: f64 = 100.0;
 
 fn main() -> io::Result<()> {
     let stdout = stdout();
@@ -21,14 +24,21 @@ fn main() -> io::Result<()> {
 
     t.setup()?;
 
-    while !t.sign_end {
+    while t.state != State::Quit {
+        t.controls()?;
         t.main_loop()?;
         t.sout.flush()?;
         thread::sleep(t.fps);
     }
 
-    t.exit_cleanup()?;
+    t.quit_cleanup()?;
     Ok(())
+}
+
+#[derive(PartialEq)]
+enum State {
+    Main,
+    Quit,
 }
 
 struct Tecken {
@@ -36,12 +46,11 @@ struct Tecken {
     sout: Stdout,
     columns: u16,
     rows: u16,
+    state: State,
 
     // logic
     fps: Duration,
-
-    // signals
-    sign_end: bool,
+    text_entry_buff: String,
 }
 
 impl Tecken {
@@ -53,14 +62,16 @@ impl Tecken {
             rows: 0,
             // logic
             fps: get_fps(FPS),
+            text_entry_buff: String::new(),
             // signals
-            sign_end: false,
+            state: State::Main,
         }
     }
 
     fn main_loop(&mut self) -> io::Result<()> {
-        thread::sleep(Duration::from_secs(5));
-        self.sign_end = true;
+        self.clear_screen()?;
+        self.sout.queue(MoveTo(0, 0))?;
+        self.sout.write(self.text_entry_buff.as_bytes())?;
         Ok(())
     }
 
@@ -72,7 +83,7 @@ impl Tecken {
         Ok(())
     }
 
-    fn exit_cleanup(&mut self) -> io::Result<()> {
+    fn quit_cleanup(&mut self) -> io::Result<()> {
         disable_raw_mode()?;
         self.sout.execute(LeaveAlternateScreen)?;
         Ok(())
