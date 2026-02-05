@@ -4,16 +4,10 @@ use std::{
     time::Duration,
 };
 
-use crossterm::{
-    ExecutableCommand, QueueableCommand,
-    cursor::MoveTo,
-    terminal::{
-        self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
-        disable_raw_mode, enable_raw_mode,
-    },
-};
+use crossterm::{QueueableCommand, cursor::MoveTo};
 
 mod controls;
+mod utils;
 
 const FPS: f64 = 100.0;
 
@@ -61,7 +55,7 @@ impl Tecken {
             columns: 0,
             rows: 0,
             // logic
-            fps: get_fps(FPS),
+            fps: utils::get_fps(FPS),
             text_entry_buff: String::new(),
             // signals
             state: State::Main,
@@ -74,27 +68,4 @@ impl Tecken {
         self.sout.write(self.text_entry_buff.as_bytes())?;
         Ok(())
     }
-
-    fn setup(&mut self) -> io::Result<()> {
-        self.sout.execute(EnterAlternateScreen)?;
-        (self.columns, self.rows) = terminal::size()?;
-        enable_raw_mode()?;
-        self.clear_screen()?;
-        Ok(())
-    }
-
-    fn quit_cleanup(&mut self) -> io::Result<()> {
-        disable_raw_mode()?;
-        self.sout.execute(LeaveAlternateScreen)?;
-        Ok(())
-    }
-
-    fn clear_screen(&mut self) -> io::Result<()> {
-        self.sout.queue(Clear(ClearType::All))?;
-        Ok(())
-    }
-}
-
-fn get_fps(fps: f64) -> Duration {
-    Duration::from_secs_f64(1.0 / fps)
 }
