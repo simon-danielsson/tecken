@@ -62,6 +62,10 @@ impl Tecken {
 
                             // type characters
                             (KeyCode::Char(c), _) => {
+                                if !self.first_char_typed {
+                                    self.first_char_typed =
+                                        true;
+                                }
                                 self.text_entry_buff.push(c);
                             }
 

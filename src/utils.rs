@@ -19,6 +19,7 @@ impl Tecken {
         self.gen_word_pool();
         self.sout.queue(cursor::SavePosition)?;
         self.sout.queue(cursor::Hide)?;
+        self.gen_new_sentence();
         Ok(())
     }
     pub fn gen_word_pool(&mut self) {

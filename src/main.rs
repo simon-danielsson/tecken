@@ -13,6 +13,7 @@ use crossterm::{
 use rand::seq::IndexedMutRandom;
 
 mod controls;
+mod stopwatch;
 mod utils;
 
 const WORDS: &str = include_str!("words.txt");
@@ -33,12 +34,20 @@ fn main() -> io::Result<()> {
 
     while t.state != State::Quit {
         t.controls()?;
+        if t.first_char_typed {
+            t.stopwatch.start();
+        }
         t.main_loop()?;
         t.sout.flush()?;
         thread::sleep(t.fps);
     }
 
     t.quit_cleanup()?;
+
+    // if user exits prematurely, don't print results
+    if t.text_entry_buff.chars().count() == t.current_sentence.chars().count() {
+        t.print_results();
+    }
     Ok(())
 }
 
@@ -67,6 +76,9 @@ struct Tecken {
     rows: u16,
     state: State,
     fps: Duration,
+    stopwatch: stopwatch::StopWatch,
+    // signal to start stopwatch
+    first_char_typed: bool,
 
     word_pool: Vec<String>,
     current_sentence: String,
@@ -83,13 +95,33 @@ impl Tecken {
             rows: 0,
             state: State::Main,
             fps: utils::get_fps(FPS),
-
+            stopwatch: stopwatch::StopWatch::new(),
+            first_char_typed: false,
             word_pool: Vec::new(),
             current_sentence: String::new(),
             text_entry_buff: String::new(),
             user_typing_errors: 0,
             invalid_letters_col_pos: HashSet::new(),
         }
+    }
+
+    /// WPM: (words - errors) / minutes
+    /// Accuracy (%): 1 - (errors / total characters)
+    /// Time (sec)
+    fn print_results(&mut self) {
+        let total_time_sec = self.stopwatch.total() as f64;
+        let minutes = total_time_sec / 60.0;
+
+        let total_words = self.current_sentence.split_whitespace().count() as f64;
+        let errors = self.user_typing_errors as f64;
+        let total_chars = self.current_sentence.chars().count() as f64;
+
+        let wpm = (total_words - errors).max(0.0) / minutes;
+        let accuracy = (1.0 - (errors / total_chars)) * 100.0;
+
+        println!("WPM:        {:.1}", wpm);
+        println!("Accuracy:   {:.2}%", accuracy);
+        println!("Time:       {:.1} sec", total_time_sec);
     }
 
     fn gen_new_sentence(&mut self) {
@@ -166,9 +198,13 @@ impl Tecken {
         Ok(())
     }
 
-    fn write_error_amt(&mut self) -> io::Result<()> {
+    fn write_metadata(&mut self) -> io::Result<()> {
         self.sout.queue(MoveTo(0, 1))?;
-        let s = format!("Errors: {}", self.user_typing_errors);
+        let s = format!(
+            "Time: {} seconds, Errors: {}",
+            self.stopwatch.elapsed(),
+            self.user_typing_errors
+        );
         self.sout.write(s.as_bytes())?;
         Ok(())
     }
@@ -183,13 +219,23 @@ impl Tecken {
         self.validation()?;
         self.write_errors()?;
 
-        self.write_error_amt()?;
+        self.write_metadata()?;
 
         // if sentence is finished, generate new one
-        if self.text_entry_buff.chars().count() == self.current_sentence.chars().count() {
-            self.text_entry_buff.clear();
-            self.current_sentence.clear();
-            self.gen_new_sentence();
+        // if self.text_entry_buff.chars().count() == self.current_sentence.chars().count() {
+        //     self.text_entry_buff.clear();
+        //     self.current_sentence.clear();
+        // }
+
+        // if sentence is finished, exit program
+        if self.first_char_typed {
+            if self.text_entry_buff.chars().count()
+            == self.current_sentence.chars().count()
+            {
+                self.stopwatch.stop();
+                self.state = State::Quit;
+            }
+        } else {
         }
         Ok(())
     }
