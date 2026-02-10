@@ -20,8 +20,8 @@ const WORDS: &str = include_str!("words.txt");
 const ERROR_BG: Color = Color::Red;
 const ERROR_FG: Color = Color::White;
 
-const WORDS_AMT: i32 = 100;
-const LINE_LEN: i32 = 20;
+const WORDS_AMT: i32 = 10;
+const LINE_LEN: i32 = WORDS_AMT / 2;
 
 const USER_ENTRY_HL: Color = Color::Blue;
 const FPS: f64 = 100.0;
@@ -101,6 +101,9 @@ impl Line {
     fn new(text: Vec<String>, pos: Pos) -> Self {
         Self { text, pos }
     }
+    fn len(&mut self) -> usize {
+        self.text.concat().chars().count()
+    }
 }
 
 struct Tecken {
@@ -116,7 +119,7 @@ struct Tecken {
     input_registered: bool,
     word_pool: Vec<String>,
     exercise_text: String,
-    exercise_text_as_lines: Vec<Line>,
+    exercise_text_lines: Vec<Line>,
     exercise_text_text: String,
     text_entry_buff: String,
     user_typing_errors: i32,
@@ -137,7 +140,7 @@ impl Tecken {
             word_pool: Vec::new(),
             exercise_text: String::new(),
             exercise_text_text: String::new(),
-            exercise_text_as_lines: Vec::new(),
+            exercise_text_lines: Vec::new(),
             text_entry_buff: String::new(),
             user_typing_errors: 0,
             invalid_letters_col_pos: HashSet::new(),
@@ -151,9 +154,9 @@ impl Tecken {
         let total_time_sec = self.stopwatch.total() as f64;
         let minutes = total_time_sec / 60.0;
 
-        let total_words = self.exercise_text.split_whitespace().count() as f64;
+        let total_words = self.exercise_text_text.split_whitespace().count() as f64;
+        let total_chars = self.exercise_text_text.chars().count() as f64;
         let errors = self.user_typing_errors as f64;
-        let total_chars = self.exercise_text.chars().count() as f64;
 
         let wpm = (total_words - errors).max(0.0) / minutes;
         let accuracy = (1.0 - (errors / total_chars)) * 100.0;
@@ -185,7 +188,7 @@ impl Tecken {
                 starting_row + i as u16,
             );
 
-            self.exercise_text_as_lines.push(Line::new(line_str, pos));
+            self.exercise_text_lines.push(Line::new(line_str, pos));
         }
         _ = exercise_text_text.pop();
         self.exercise_text_text = exercise_text_text;
@@ -194,7 +197,7 @@ impl Tecken {
     fn w_exercise_text(&mut self) -> io::Result<()> {
         self.sout.queue(SetForegroundColor(Color::Blue))?;
         self.sout.queue(SetBackgroundColor(Color::Reset))?;
-        for line in self.exercise_text_as_lines.iter_mut() {
+        for line in self.exercise_text_lines.iter_mut() {
             self.sout.queue(MoveTo(line.pos.col, line.pos.row))?;
             let text = line.text.concat();
             self.sout.write(text.as_bytes())?;
@@ -206,10 +209,56 @@ impl Tecken {
     fn w_user_entry(&mut self) -> io::Result<()> {
         self.sout.queue(SetForegroundColor(Color::Black))?;
         self.sout.queue(SetBackgroundColor(USER_ENTRY_HL))?;
-        self.sout.queue(MoveTo(0, 0))?;
-        self.sout.write(self.text_entry_buff.as_bytes())?;
+
+        let user_chars: Vec<char> = self.text_entry_buff.chars().collect();
+        let mut offset: usize = 0;
+
+        for (i, line) in self.exercise_text_lines.iter().enumerate() {
+            let line_len = line.text.concat().chars().count();
+
+            if offset >= user_chars.len() {
+                break;
+            }
+
+            let end = (offset + line_len).min(user_chars.len());
+            let typed_segment: String = user_chars[offset..end].iter().collect();
+
+            self.sout.queue(MoveTo(line.pos.col, line.pos.row))?;
+            self.sout.write_all(typed_segment.as_bytes())?;
+
+            offset += line_len;
+
+            // skip space at line change to not add extra offset
+            if i != self.exercise_text_lines.len() - 1 {
+                offset += 1;
+            }
+        }
+
         self.sout.queue(ResetColor)?;
         Ok(())
+    }
+
+    fn char_idx_to_pos(&self, idx: usize) -> Option<Pos> {
+        let mut offset = 0usize;
+
+        for line in &self.exercise_text_lines {
+            let line_len = line.text.concat().chars().count();
+
+            if idx < offset + line_len {
+                let col = line.pos.col + (idx - offset) as u16;
+                let row = line.pos.row;
+                return Some(Pos::new(col, row));
+            }
+
+            offset += line_len;
+
+            // skip space at line change to not add extra offset
+            if line_len != self.exercise_text_lines.len() - 1 {
+                offset += 1;
+            }
+        }
+
+        None
     }
 
     /// loop through each character of usr ip and
@@ -235,30 +284,29 @@ impl Tecken {
     }
 
     fn w_errors(&mut self) -> io::Result<()> {
-        let current_row = 0;
-
         let user_chars: Vec<char> = self.text_entry_buff.chars().collect();
 
-        for &col in &self.invalid_letters_col_pos {
-            let idx = col as usize;
+        for &idx_u16 in &self.invalid_letters_col_pos {
+            let idx = idx_u16 as usize;
 
-            if let Some(&ch) = user_chars.get(idx) {
-                self.sout.queue(MoveTo(col, current_row))?;
+            if let (Some(&ch), Some(pos)) =
+            (user_chars.get(idx), self.char_idx_to_pos(idx))
+            {
+                self.sout.queue(MoveTo(pos.col, pos.row))?;
                 self.sout.queue(SetBackgroundColor(ERROR_BG))?;
                 self.sout.queue(SetForegroundColor(ERROR_FG))?;
                 self.sout.write_all(ch.to_string().as_bytes())?;
             }
         }
-        self.sout.queue(SetBackgroundColor(Color::Reset))?;
-        self.sout.queue(SetForegroundColor(Color::Reset))?;
 
+        self.sout.queue(ResetColor)?;
         Ok(())
     }
 
     fn w_metadata(&mut self) -> io::Result<()> {
         // get the last row of the exercise text to adhere to
         let prev_row: u16 = {
-            let last_line = self.exercise_text_as_lines.last().unwrap();
+            let last_line = self.exercise_text_lines.last().unwrap();
             last_line.pos.row
         };
 
