@@ -2,6 +2,21 @@
 name = "tecken"
 version = "0.2.0"
 edition = "2024"
+description = "A typing practice tool in the terminal."
+repository = "https://github.com/simon-danielsson/tecken"
+authors = ["Simon Danielsson <contact@simondanielsson.se>"]
+keywords = ["typing", "game", "terminal", "practice"]
+homepage = "https://www.simondanielsson.se"
+exclude = ["media/"]
+license = "MIT"
+readme = "README.md"
+rust-version = "1.88.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
 
 [dependencies]
 crossterm = "0.29.0"
