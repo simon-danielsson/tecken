@@ -1,9 +1,9 @@
 
 ## todo
 
-- [ ] instead of up in the corner, all the ui should sit in the center of the viewport
-- [ ] make the ui a bit fancier with a frame and such
-- [ ] add linebreaks so that multi-line exercises are supported (this is essential if the user wants exercises with 100+ words)
+- [x] instead of up in the corner, all the ui should sit in the center of the viewport
+- [x] make the ui a bit fancier with a frame and such
+- [x] add linebreaks so that multi-line exercises are supported (this is essential if the user wants exercises with 100+ words)
 - [ ] take arguments at launch
 
 ## brainstorming
