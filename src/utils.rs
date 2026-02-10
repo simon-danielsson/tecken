@@ -22,6 +22,15 @@ impl Tecken {
         self.gen_new_sentence();
         Ok(())
     }
+
+    /// calculate the column pos required so that a line can be centered
+    pub fn center_line(&mut self, line: String) -> u16 {
+        let center_of_vp = self.columns / 2;
+        let line_length = line.chars().count();
+        let centered = center_of_vp as usize - (line_length / 2);
+        return centered as u16;
+    }
+
     pub fn gen_word_pool(&mut self) {
         self.word_pool = WORDS.split_whitespace().map(String::from).collect();
     }
