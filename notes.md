@@ -8,12 +8,13 @@
 
 ## brainstorming
 
-**== Regarding linebreaks ==**
+**== Regarding linebreaks ==**  
+  
 to make linebreaks a possibility I guess I'd need to refactor the exercise to be a
 vector of <line, Pos(col, row)> and then have the user buffer automatically follow those possitions?
 
-**== Arguments ==**
-
+**== Arguments ==**  
+  
 ``` bash
 -w : word quantity (max: 20)
 -l : language [english | swedish]
@@ -23,8 +24,8 @@ vector of <line, Pos(col, row)> and then have the user buffer automatically foll
 default args:
 -w 10 -l english -d 1
 
-**== Results ==**
-
+**== Results ==**  
+  
 program will exit automatically when the exercise is finished and print a result
 
 WPM: (amount of words in exercise - amount of errors) / minutes
