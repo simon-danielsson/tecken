@@ -54,6 +54,10 @@ impl Tecken {
                                     self.text_entry_buff
                                         .truncate(i);
                                 }
+                                if !self.input_registered {
+                                    self.input_registered =
+                                        true;
+                                }
                             }
 
                             (KeyCode::Backspace, _) => {
@@ -64,6 +68,10 @@ impl Tecken {
                             (KeyCode::Char(c), _) => {
                                 if !self.first_char_typed {
                                     self.first_char_typed =
+                                        true;
+                                }
+                                if !self.input_registered {
+                                    self.input_registered =
                                         true;
                                 }
                                 self.text_entry_buff.push(c);

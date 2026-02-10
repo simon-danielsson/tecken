@@ -8,7 +8,7 @@ use std::{
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
-    style::{Color, ResetColor, SetBackgroundColor, SetForegroundColor},
+    style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
 use rand::seq::IndexedMutRandom;
 
@@ -58,6 +58,28 @@ enum State {
     Quit,
 }
 
+enum BorderType {
+    Single,
+    Double,
+}
+
+struct Rect {
+    pos: Pos,
+    width: u16,
+    height: u16,
+    border: BorderType,
+}
+impl Rect {
+    fn new(pos: Pos, width: u16, height: u16, border: BorderType) -> Self {
+        Self {
+            pos,
+            width,
+            height,
+            border,
+        }
+    }
+}
+
 #[derive(Clone, PartialEq)]
 struct Pos {
     col: u16,
@@ -90,6 +112,8 @@ struct Tecken {
     stopwatch: stopwatch::StopWatch,
     // signal to start stopwatch
     first_char_typed: bool,
+    // signal to update ui only when input registered
+    input_registered: bool,
     word_pool: Vec<String>,
     exercise_text: String,
     exercise_text_as_lines: Vec<Line>,
@@ -109,6 +133,7 @@ impl Tecken {
             fps: utils::get_fps(FPS),
             stopwatch: stopwatch::StopWatch::new(),
             first_char_typed: false,
+            input_registered: false,
             word_pool: Vec::new(),
             exercise_text: String::new(),
             exercise_text_text: String::new(),
@@ -166,7 +191,7 @@ impl Tecken {
         self.exercise_text_text = exercise_text_text;
     }
 
-    fn write_exercise_text(&mut self) -> io::Result<()> {
+    fn w_exercise_text(&mut self) -> io::Result<()> {
         self.sout.queue(SetForegroundColor(Color::Blue))?;
         self.sout.queue(SetBackgroundColor(Color::Reset))?;
         for line in self.exercise_text_as_lines.iter_mut() {
@@ -178,7 +203,7 @@ impl Tecken {
         Ok(())
     }
 
-    fn write_user_entry(&mut self) -> io::Result<()> {
+    fn w_user_entry(&mut self) -> io::Result<()> {
         self.sout.queue(SetForegroundColor(Color::Black))?;
         self.sout.queue(SetBackgroundColor(USER_ENTRY_HL))?;
         self.sout.queue(MoveTo(0, 0))?;
@@ -190,7 +215,7 @@ impl Tecken {
     /// loop through each character of usr ip and
     /// validate against exercise
     fn validation(&mut self) -> io::Result<()> {
-        let exercise_chars: Vec<char> = self.exercise_text.chars().collect();
+        let exercise_chars: Vec<char> = self.exercise_text_text.chars().collect();
         let user_chars: Vec<char> = self.text_entry_buff.chars().collect();
 
         let mut new_invalids = HashSet::new();
@@ -209,7 +234,7 @@ impl Tecken {
         Ok(())
     }
 
-    fn write_errors(&mut self) -> io::Result<()> {
+    fn w_errors(&mut self) -> io::Result<()> {
         let current_row = 0;
 
         let user_chars: Vec<char> = self.text_entry_buff.chars().collect();
@@ -230,7 +255,7 @@ impl Tecken {
         Ok(())
     }
 
-    fn write_metadata(&mut self) -> io::Result<()> {
+    fn w_metadata(&mut self) -> io::Result<()> {
         // get the last row of the exercise text to adhere to
         let prev_row: u16 = {
             let last_line = self.exercise_text_as_lines.last().unwrap();
@@ -250,17 +275,93 @@ impl Tecken {
         Ok(())
     }
 
-    fn main_loop(&mut self) -> io::Result<()> {
-        self.clear_screen()?;
-        // write exercise word
-        self.write_exercise_text()?;
-        // write user type
-        self.write_user_entry()?;
-        // check for errors in input
-        self.validation()?;
-        self.write_errors()?;
+    /// write a box using type Rect
+    fn w_rect(&mut self, r: Rect) -> io::Result<()> {
+        let b = match r.border {
+            BorderType::Single => ['╭', '─', '╮', '│', '╯', '╰'],
+            BorderType::Double => ['╔', '═', '╗', '║', '╝', '╚'],
+        };
 
-        self.write_metadata()?;
+        // if nothing
+        if r.width == 0 || r.height == 0 {
+            return Ok(());
+        }
+
+        let x0 = r.pos.col;
+        let y0 = r.pos.row;
+        let w = r.width as u16;
+        let h = r.height as u16;
+
+        // 1x1: just a corner char (pick top-left)
+        if w == 1 && h == 1 {
+            self.sout.queue(MoveTo(x0, y0))?;
+            self.sout.queue(Print(b[0]))?;
+            return Ok(());
+        }
+
+        // repeat horizontal segment count times
+        let horiz_len = w.saturating_sub(2) as usize;
+        let horiz = b[1].to_string().repeat(horiz_len);
+
+        // top row
+        self.sout.queue(MoveTo(x0, y0))?;
+        if w == 1 {
+            self.sout.queue(Print(b[0]))?;
+        } else {
+            self.sout
+                .queue(Print(b[0]))?
+                .queue(Print(&horiz))?
+                .queue(Print(b[2]))?;
+        }
+
+        // verticals
+        let mid_rows = h.saturating_sub(2);
+        for dy in 0..mid_rows {
+            let yy = y0 + 1 + dy;
+            self.sout.queue(MoveTo(x0, yy))?.queue(Print(b[3]))?;
+            if w > 1 {
+                self.sout
+                    .queue(MoveTo(x0 + w - 1, yy))?
+                    .queue(Print(b[3]))?;
+            }
+        }
+
+        // bottom row
+        if h > 1 {
+            let yb = y0 + h - 1;
+            self.sout.queue(MoveTo(x0, yb))?;
+            if w == 1 {
+                self.sout.queue(Print(b[5]))?;
+            } else {
+                self.sout
+                    .queue(Print(b[5]))?
+                    .queue(Print(&horiz))?
+                    .queue(Print(b[4]))?;
+            }
+        }
+        Ok(())
+    }
+
+    fn main_loop(&mut self) -> io::Result<()> {
+        if self.input_registered {
+            self.clear_screen()?;
+        }
+
+        // write surrounding frame ui
+        let main_frame = Rect::new(
+            Pos { col: 0, row: 0 },
+            self.columns,
+            self.rows,
+            BorderType::Double,
+        );
+        self.w_rect(main_frame)?;
+
+        self.w_exercise_text()?;
+        self.w_user_entry()?;
+        self.validation()?;
+        self.w_errors()?;
+
+        self.w_metadata()?;
 
         // if sentence is finished, exit program
         if self.first_char_typed {
@@ -270,8 +371,9 @@ impl Tecken {
                 self.stopwatch.stop();
                 self.state = State::Quit;
             }
-        } else {
         }
+        self.input_registered = false;
+        // }
         Ok(())
     }
 }
