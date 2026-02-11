@@ -12,6 +12,7 @@ use crossterm::{
 };
 use rand::seq::IndexedMutRandom;
 
+mod arg_parse;
 mod controls;
 mod stopwatch;
 mod utils;
@@ -58,6 +59,7 @@ enum State {
     Quit,
 }
 
+#[allow(unused)]
 enum BorderType {
     Single,
     Double,
@@ -101,9 +103,6 @@ impl Line {
     fn new(text: Vec<String>, pos: Pos) -> Self {
         Self { text, pos }
     }
-    fn len(&mut self) -> usize {
-        self.text.concat().chars().count()
-    }
 }
 
 struct Tecken {
@@ -118,7 +117,6 @@ struct Tecken {
     // signal to update ui only when input registered
     input_registered: bool,
     word_pool: Vec<String>,
-    exercise_text: String,
     exercise_text_lines: Vec<Line>,
     exercise_text_text: String,
     text_entry_buff: String,
@@ -138,7 +136,6 @@ impl Tecken {
             first_char_typed: false,
             input_registered: false,
             word_pool: Vec::new(),
-            exercise_text: String::new(),
             exercise_text_text: String::new(),
             exercise_text_lines: Vec::new(),
             text_entry_buff: String::new(),
