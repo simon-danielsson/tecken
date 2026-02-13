@@ -1,7 +1,10 @@
 ## todo
 
-- [ ] the WPS is currently being too harshly punished by the number of errors a user makes
+- [ ] add a quote subcommand to allow the user to write quotes also instead of just random words (perhaps get quotes through an api or webscraper of some kind?)
+- [ ] statistics feature? allow the user to get their all-time statistics through a statistics subcommand
+- [ ] language option flag, allow the user to change the language to write with -l flag. English, swedish, spanish, portugese and german
 
+- [x] the WPS is currently being too harshly punished by the number of errors a user makes
 - [x] fix rendering of exercise text to screen, so that it sits nicely in the center. The length of the total exercise text will need to be calculated before adding coordinates to each line, instead of doing it backwards like it is now. I'm guessing that will be the quickest fix
 - [x] fix the "-w" flag. it does work, but only when the user wants to add 100 or more words; doing "-w 6" for example doesn't work.
 - [x] add endless mode functionality
@@ -23,7 +26,7 @@ vector of <line, Pos(col, row)> and then have the user buffer automatically foll
 ``` bash
 -w <int> : word quantity (default: 12)
 -e : endless mode (exit with esc or ctrl-c)
--l <language>: language [english | swedish] (default: english)
+-l <language>: language [english | swedish | spanish | portugese | german] (default: english)
 -d <int>: difficulty [0 (200 most common) | 1 (1000 most common) | 2 (5000 most common) | 3 (10000 most common) | 4 (25000 most common)] (default: 1)
 ```
 
