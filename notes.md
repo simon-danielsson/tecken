@@ -1,8 +1,8 @@
 ## todo
 
-- [ ] add endless mode functionality
-- [ ] fix WPM calculation since it's quite inaccurate
+- [ ] fix rendering of exercise text to screen, so that it sits nicely in the center. The length of the total exercise text will need to be calculated before adding coordinates to each line, instead of doing it backwards like it is now. I'm guessing that will be the quickest fix
 
+- [x] add endless mode functionality
 - [x] add help subcommand
 - [x] instead of up in the corner, all the ui should sit in the center of the viewport
 - [x] make the ui a bit fancier with a frame and such
