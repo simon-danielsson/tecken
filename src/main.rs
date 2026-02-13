@@ -148,6 +148,7 @@ struct Tecken {
     // flags & subcommands
     f_word_quantity: i32,
     f_endless_mode: bool,
+    f_hide_metadata: bool,
 }
 
 impl Tecken {
@@ -171,6 +172,7 @@ impl Tecken {
             // flags & subcommands
             f_word_quantity: 12,
             f_endless_mode: false,
+            f_hide_metadata: false,
         }
     }
 
@@ -462,7 +464,9 @@ impl Tecken {
         self.validation()?;
         self.w_errors()?;
 
-        self.w_metadata()?;
+        if !self.f_hide_metadata {
+            self.w_metadata()?;
+        }
 
         // if sentence is finished, exit program
         if self.state == State::Main {

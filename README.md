@@ -53,6 +53,7 @@ help : print help
 Flags
 -w <int> : set amount of words for exercise (default: 12)
 -e : endless mode (statistics after program exit will be disabled)
+-f : hide metadata in ui
 
 Controls
 [Esc] : quit
