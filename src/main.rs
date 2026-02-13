@@ -188,9 +188,11 @@ impl Tecken {
         let total_chars = self.exercise_text_text.chars().count() as f64;
         let errors = self.user_typing_errors as f64;
 
-        let wpm = (total_words - errors).max(0.0) / minutes;
+        let raw_wpm = (total_words).max(0.0) / minutes;
+        let wpm = (total_words - (errors / 2.0)).max(0.0) / minutes;
         let accuracy = (1.0 - (errors / total_chars)) * 100.0;
 
+        println!("Raw WPM:    {:.1}", raw_wpm);
         println!("WPM:        {:.1}", wpm);
         println!("Accuracy:   {:.2}%", accuracy);
         println!("Time:       {:.1} sec", total_time_sec);
