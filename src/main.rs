@@ -21,10 +21,12 @@ mod utils;
 // === constants ===
 
 // general
+
 const WORDS: &str = include_str!("static/words.txt");
-const FPS: f64 = 100.0;
+const FPS: f64 = 120.0;
 
 // colors
+
 const CLR_ERROR_BG: Color = Color::Red;
 const CLR_ERROR_FG: Color = Color::Black;
 const CLR_EXERCISE_BG: Color = Color::Reset;
@@ -53,10 +55,7 @@ fn main() -> io::Result<()> {
         if t.first_char_typed {
             t.stopwatch.start();
         }
-        if t.state == State::Main {
-            t.main_loop()?;
-        }
-        if t.state == State::Endless {
+        if t.state == State::Main || t.state == State::Endless {
             t.main_loop()?;
         }
         t.sout.flush()?;
