@@ -24,7 +24,7 @@ impl Tecken {
                     self.f_endless_mode = true;
                     self.state = State::Endless;
                 }
-                "-a" => {
+                "-h" => {
                     self.f_hide_metadata = true;
                 }
                 _ => {} // "-l" => self.f_language =
