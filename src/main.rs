@@ -10,7 +10,7 @@ use crossterm::{
     cursor::MoveTo,
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
-use rand::{Rng, seq::IndexedMutRandom};
+use rand::Rng;
 
 mod arg_parse;
 mod controls;
@@ -18,12 +18,21 @@ mod stopwatch;
 mod subcommands;
 mod utils;
 
-const WORDS: &str = include_str!("static/words.txt");
-const ERROR_BG: Color = Color::Red;
-const ERROR_FG: Color = Color::White;
+// === constants ===
 
-const USER_ENTRY_HL: Color = Color::Blue;
+// general
+const WORDS: &str = include_str!("static/words.txt");
 const FPS: f64 = 100.0;
+
+// colors
+const CLR_ERROR_BG: Color = Color::Red;
+const CLR_ERROR_FG: Color = Color::Black;
+const CLR_EXERCISE_BG: Color = Color::Reset;
+const CLR_EXERCISE_FG: Color = Color::Blue;
+const CLR_ENTRY_BG: Color = Color::Blue;
+const CLR_ENTRY_FG: Color = Color::Black;
+
+// === code ===
 
 fn main() -> io::Result<()> {
     let stdout = stdout();
@@ -41,25 +50,17 @@ fn main() -> io::Result<()> {
 
     while t.state != State::Quit {
         t.controls()?;
+        if t.first_char_typed {
+            t.stopwatch.start();
+        }
         if t.state == State::Main {
-            if t.first_char_typed {
-                t.stopwatch.start();
-            }
             t.main_loop()?;
-            t.sout.flush()?;
-            thread::sleep(t.fps);
         }
         if t.state == State::Endless {
-            if t.first_char_typed {
-                t.stopwatch.start();
-            }
             t.main_loop()?;
-            t.sout.flush()?;
-            thread::sleep(t.fps);
-            if t.exercise_finished() {
-                t.print_results();
-            }
         }
+        t.sout.flush()?;
+        thread::sleep(t.fps);
     }
 
     t.quit_cleanup()?;
@@ -259,8 +260,8 @@ impl Tecken {
     }
 
     fn w_exercise_text(&mut self) -> io::Result<()> {
-        self.sout.queue(SetForegroundColor(Color::Blue))?;
-        self.sout.queue(SetBackgroundColor(Color::Reset))?;
+        self.sout.queue(SetForegroundColor(CLR_EXERCISE_FG))?;
+        self.sout.queue(SetBackgroundColor(CLR_EXERCISE_BG))?;
         for line in self.exercise_text_lines.iter_mut() {
             self.sout.queue(MoveTo(line.pos.col, line.pos.row))?;
             let text = line.text.concat();
@@ -271,8 +272,8 @@ impl Tecken {
     }
 
     fn w_user_entry(&mut self) -> io::Result<()> {
-        self.sout.queue(SetForegroundColor(Color::Black))?;
-        self.sout.queue(SetBackgroundColor(USER_ENTRY_HL))?;
+        self.sout.queue(SetForegroundColor(CLR_ENTRY_FG))?;
+        self.sout.queue(SetBackgroundColor(CLR_ENTRY_BG))?;
 
         let user_chars: Vec<char> = self.text_entry_buff.chars().collect();
         let mut offset: usize = 0;
@@ -357,8 +358,8 @@ impl Tecken {
             (user_chars.get(idx), self.char_idx_to_pos(idx))
             {
                 self.sout.queue(MoveTo(pos.col, pos.row))?;
-                self.sout.queue(SetBackgroundColor(ERROR_BG))?;
-                self.sout.queue(SetForegroundColor(ERROR_FG))?;
+                self.sout.queue(SetBackgroundColor(CLR_ERROR_BG))?;
+                self.sout.queue(SetForegroundColor(CLR_ERROR_FG))?;
                 self.sout.write_all(ch.to_string().as_bytes())?;
             }
         }

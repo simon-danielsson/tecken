@@ -42,7 +42,6 @@ impl StopWatch {
         format!("{minute}:{second}")
     }
 
-    #[allow(unused)]
     pub fn total(&self) -> u64 {
         let duration = self.total;
         duration.as_secs()

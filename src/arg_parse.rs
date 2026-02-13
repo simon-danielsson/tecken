@@ -27,17 +27,7 @@ impl Tecken {
                 "-h" => {
                     self.f_hide_metadata = true;
                 }
-                _ => {} // "-l" => self.f_language =
-                // "-d" => self.f_difficulty = true,
-                // other => {
-                //     self.opt_dir = PathBuf::from(other);
-                //     if self.opt_dir.exists() {
-                //         self.use_opt_dir = true;
-                //     } else {
-                //         eprintln!("Directory doesn't exist!");
-                //     }
-                //     break; // stop after first positional
-                // }
+                _ => {}
             }
         }
         Ok(())
