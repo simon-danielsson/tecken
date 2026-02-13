@@ -16,7 +16,7 @@
 <p align="center">
   <a href="#info">Info</a> •
   <a href="#install">Install</a> •
-  <a href="#controls">Controls</a> •
+  <a href="#usage">Usage</a> •
   <a href="#license">License</a>
 </p>  
    
@@ -42,12 +42,18 @@ cargo install tecken
 ```
    
 ---
-<div id="controls"></div>
+<div id="usage"></div>
 
-## 💻 Controls
+## 💻 Usage
     
-``` bash
-[Esc] - quit
+``` terminal
+
+Flags
+-w <int> : set amount of words for exercise (default: 12)
+
+Controls
+[Esc] : quit
+[Ctrl-C] : quit
 ```
    
 ---

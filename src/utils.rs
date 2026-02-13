@@ -19,6 +19,7 @@ impl Tecken {
         self.gen_word_pool();
         self.sout.queue(cursor::SavePosition)?;
         self.sout.queue(cursor::Hide)?;
+        self.line_length = self.f_word_quantity / 2;
         self.gen_new_sentence();
         Ok(())
     }

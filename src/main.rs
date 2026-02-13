@@ -17,12 +17,9 @@ mod controls;
 mod stopwatch;
 mod utils;
 
-const WORDS: &str = include_str!("words.txt");
+const WORDS: &str = include_str!("static/words.txt");
 const ERROR_BG: Color = Color::Red;
 const ERROR_FG: Color = Color::White;
-
-const WORDS_AMT: i32 = 10;
-const LINE_LEN: i32 = WORDS_AMT / 2;
 
 const USER_ENTRY_HL: Color = Color::Blue;
 const FPS: f64 = 100.0;
@@ -32,6 +29,7 @@ fn main() -> io::Result<()> {
 
     let mut t = Tecken::new(stdout);
 
+    t.parse_args()?;
     t.setup()?;
 
     while t.state != State::Quit {
@@ -122,6 +120,11 @@ struct Tecken {
     text_entry_buff: String,
     user_typing_errors: i32,
     invalid_letters_col_pos: HashSet<u16>,
+    line_length: i32,
+    // flags & subcommands
+    s_help: bool,
+    f_word_quantity: i32,
+    f_endless_mode: bool,
 }
 
 impl Tecken {
@@ -141,6 +144,11 @@ impl Tecken {
             text_entry_buff: String::new(),
             user_typing_errors: 0,
             invalid_letters_col_pos: HashSet::new(),
+            line_length: 0,
+            // flags & subcommands
+            s_help: false,
+            f_word_quantity: 12,
+            f_endless_mode: false,
         }
     }
 
@@ -165,13 +173,39 @@ impl Tecken {
 
     fn gen_new_sentence(&mut self) {
         let mut rng = rand::rng();
-        let num_of_lines = WORDS_AMT / LINE_LEN;
+
+        let num_of_lines: i32 = {
+            let usable_cols = (self.columns as i32 - 4).max(10);
+
+            // median word length in bytes
+            let median_len = {
+                if self.word_pool.is_empty() {
+                    1
+                } else {
+                    let mut lens: Vec<usize> =
+                    self.word_pool.iter().map(|w| w.len()).collect();
+                    lens.sort_unstable();
+                    let n = lens.len();
+                    if n % 2 == 1 {
+                        lens[n / 2] as i32
+                    } else {
+                        ((lens[n / 2 - 1] + lens[n / 2]) / 2) as i32
+                    }
+                }
+            }
+                .max(1);
+
+            // +1 for the space between words
+            self.line_length = (usable_cols / (median_len + 1)).max(1);
+            (self.f_word_quantity / self.line_length).max(1)
+        };
+
         let mut exercise_text_text = String::new();
         let center_row = self.rows / 2;
         let starting_row: u16 = center_row - (num_of_lines as u16 / 2);
         for i in 0..num_of_lines {
             let mut line_str = Vec::new();
-            for _ in 0..LINE_LEN {
+            for _ in 0..self.line_length {
                 if let Some(word) = self.word_pool.choose_mut(&mut rng) {
                     line_str.push(word.to_string());
                     line_str.push(" ".to_string());

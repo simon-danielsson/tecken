@@ -1,4 +1,3 @@
-
 ## todo
 
 - [x] instead of up in the corner, all the ui should sit in the center of the viewport
@@ -16,9 +15,10 @@ vector of <line, Pos(col, row)> and then have the user buffer automatically foll
 **== Arguments ==**  
   
 ``` bash
--w : word quantity (max: 20)
--l : language [english | swedish]
--d : difficulty [0 (200 most common) | 1 (1000 most common) | 2 (5000 most common) | 3 (10000 most common) | 4 (25000 most common)]
+-w <int> : word quantity (default: 12)
+-e : endless mode (exit with esc or ctrl-c)
+-l <language>: language [english | swedish] (default: english)
+-d <int>: difficulty [0 (200 most common) | 1 (1000 most common) | 2 (5000 most common) | 3 (10000 most common) | 4 (25000 most common)] (default: 1)
 ```
 
 default args:
