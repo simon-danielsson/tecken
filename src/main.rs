@@ -23,7 +23,7 @@ mod utils;
 // general
 
 const WORDS: &str = include_str!("static/words.txt");
-const FPS: f64 = 120.0;
+const FPS: f64 = 150.0;
 
 // colors
 
