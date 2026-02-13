@@ -229,10 +229,12 @@ impl Tecken {
         let starting_row: u16 = center_row - (num_of_lines as u16 / 2);
         for i in 0..num_of_lines {
             let mut line_str = Vec::new();
-            for _ in 0..self.line_length {
+            let mut line_len: i32 = 0;
+            while line_len < self.columns as i32 - (self.columns as i32 / 3) {
                 if let Some(word) = self.word_pool.choose_mut(&mut rng) {
                     line_str.push(word.to_string());
                     line_str.push(" ".to_string());
+                    line_len += word.chars().count() as i32;
                 }
             }
             exercise_text_text.push_str(&line_str.concat());
