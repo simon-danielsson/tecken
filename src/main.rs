@@ -15,6 +15,7 @@ use rand::seq::IndexedMutRandom;
 mod arg_parse;
 mod controls;
 mod stopwatch;
+mod subcommands;
 mod utils;
 
 const WORDS: &str = include_str!("static/words.txt");
@@ -30,6 +31,12 @@ fn main() -> io::Result<()> {
     let mut t = Tecken::new(stdout);
 
     t.parse_args()?;
+
+    if t.state == State::Help {
+        t.s_help();
+        return Ok(());
+    }
+
     t.setup()?;
 
     while t.state != State::Quit {
@@ -54,6 +61,7 @@ fn main() -> io::Result<()> {
 #[derive(PartialEq)]
 enum State {
     Main,
+    Help,
     Quit,
 }
 
@@ -122,7 +130,6 @@ struct Tecken {
     invalid_letters_col_pos: HashSet<u16>,
     line_length: i32,
     // flags & subcommands
-    s_help: bool,
     f_word_quantity: i32,
     f_endless_mode: bool,
 }
@@ -146,7 +153,6 @@ impl Tecken {
             invalid_letters_col_pos: HashSet::new(),
             line_length: 0,
             // flags & subcommands
-            s_help: false,
             f_word_quantity: 12,
             f_endless_mode: false,
         }

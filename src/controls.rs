@@ -83,6 +83,7 @@ impl Tecken {
                 }
 
                 State::Quit => {}
+                State::Help => {}
             }
         }
         Ok(())

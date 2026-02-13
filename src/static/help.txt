@@ -1,0 +1,9 @@
+Subcommands
+help : print this text (overrides any other flags or subcommands)
+
+Flags
+-w <int> : set amount of words for exercise (default: 12)
+
+Controls
+[Esc] : quit
+[Ctrl-C] : quit

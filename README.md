@@ -47,6 +47,8 @@ cargo install tecken
 ## 💻 Usage
     
 ``` terminal
+Subcommands
+help : print help
 
 Flags
 -w <int> : set amount of words for exercise (default: 12)

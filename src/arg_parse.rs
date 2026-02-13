@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::Tecken;
+use crate::{State, Tecken};
 
 impl Tecken {
     pub fn parse_args(&mut self) -> io::Result<()> {
@@ -17,7 +17,7 @@ impl Tecken {
                         .unwrap_or(12);
                 }
                 "help" => {
-                    self.s_help = true;
+                    self.state = State::Help;
                     return Ok(());
                 }
                 "-e" => {
