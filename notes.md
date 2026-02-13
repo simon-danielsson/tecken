@@ -1,9 +1,9 @@
 ## todo
 
+- [ ] the WPS is currently being too harshly punished by the number of errors a user makes
+
 - [x] fix rendering of exercise text to screen, so that it sits nicely in the center. The length of the total exercise text will need to be calculated before adding coordinates to each line, instead of doing it backwards like it is now. I'm guessing that will be the quickest fix
 - [x] fix the "-w" flag. it does work, but only when the user wants to add 100 or more words; doing "-w 6" for example doesn't work.
-- [ ] add a ceiling to the amount of words a user can have per exercise, perhaps 600
-
 - [x] add endless mode functionality
 - [x] add help subcommand
 - [x] instead of up in the corner, all the ui should sit in the center of the viewport
