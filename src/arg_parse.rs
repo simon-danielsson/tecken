@@ -22,6 +22,7 @@ impl Tecken {
                 }
                 "-e" => {
                     self.f_endless_mode = true;
+                    self.state = State::Endless;
                 }
                 _ => {} // "-l" => self.f_language =
                 // "-d" => self.f_difficulty = true,

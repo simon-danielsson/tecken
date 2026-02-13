@@ -8,7 +8,7 @@ use crossterm::{
     },
 };
 
-use crate::{Tecken, WORDS};
+use crate::{Tecken, WORDS, stopwatch::StopWatch};
 
 impl Tecken {
     pub fn setup(&mut self) -> io::Result<()> {
@@ -22,6 +22,30 @@ impl Tecken {
         self.line_length = self.f_word_quantity / 2;
         self.gen_new_sentence();
         Ok(())
+    }
+
+    pub fn endless_mode_next_sentence(&mut self) -> io::Result<()> {
+        // state reset
+        self.input_registered = false;
+        self.first_char_typed = false;
+        self.invalid_letters_col_pos.clear();
+        self.text_entry_buff.clear();
+        self.exercise_text_text.clear();
+        self.exercise_text_lines.clear();
+        self.user_typing_errors = 0;
+        self.stopwatch.stop();
+        self.stopwatch.reset();
+        self.stopwatch = StopWatch::new();
+
+        // new setup
+        self.clear_screen()?;
+        self.gen_word_pool();
+        self.gen_new_sentence();
+        Ok(())
+    }
+
+    pub fn exercise_finished(&mut self) -> bool {
+        self.text_entry_buff.chars().count() == self.exercise_text_text.chars().count()
     }
 
     /// calculate the column pos required so that a line can be centered

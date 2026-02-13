@@ -41,19 +41,34 @@ fn main() -> io::Result<()> {
 
     while t.state != State::Quit {
         t.controls()?;
-        if t.first_char_typed {
-            t.stopwatch.start();
+        if t.state == State::Main {
+            if t.first_char_typed {
+                t.stopwatch.start();
+            }
+            t.main_loop()?;
+            t.sout.flush()?;
+            thread::sleep(t.fps);
         }
-        t.main_loop()?;
-        t.sout.flush()?;
-        thread::sleep(t.fps);
+        if t.state == State::Endless {
+            if t.first_char_typed {
+                t.stopwatch.start();
+            }
+            t.main_loop()?;
+            t.sout.flush()?;
+            thread::sleep(t.fps);
+            if t.exercise_finished() {
+                t.print_results();
+            }
+        }
     }
 
     t.quit_cleanup()?;
 
-    // if user exits prematurely, don't print results
-    if t.text_entry_buff.chars().count() == t.exercise_text_text.chars().count() {
-        t.print_results();
+    // if user exits prematurely or is exiting endless mode, don't print results
+    if !t.f_endless_mode {
+        if t.exercise_finished() {
+            t.print_results();
+        }
     }
     Ok(())
 }
@@ -61,6 +76,7 @@ fn main() -> io::Result<()> {
 #[derive(PartialEq)]
 enum State {
     Main,
+    Endless,
     Help,
     Quit,
 }
@@ -449,12 +465,19 @@ impl Tecken {
         self.w_metadata()?;
 
         // if sentence is finished, exit program
-        if self.first_char_typed {
-            if self.text_entry_buff.chars().count()
-            == self.exercise_text_text.chars().count()
-            {
-                self.stopwatch.stop();
-                self.state = State::Quit;
+        if self.state == State::Main {
+            if self.first_char_typed {
+                if self.exercise_finished() {
+                    self.stopwatch.stop();
+                    self.state = State::Quit;
+                }
+            }
+        }
+        if self.state == State::Endless {
+            if self.first_char_typed {
+                if self.exercise_finished() {
+                    self.endless_mode_next_sentence()?;
+                }
             }
         }
         self.input_registered = false;

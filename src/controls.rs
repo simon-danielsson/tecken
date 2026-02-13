@@ -7,7 +7,7 @@ impl Tecken {
     pub fn controls(&mut self) -> std::io::Result<()> {
         if poll(Duration::ZERO)? {
             match self.state {
-                State::Main => {
+                State::Main | State::Endless => {
                     if let Event::Key(KeyEvent {
                         code, modifiers, ..
                     }) = event::read()?
