@@ -10,7 +10,7 @@ use crossterm::{
     cursor::MoveTo,
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
-use rand::seq::IndexedMutRandom;
+use rand::{Rng, seq::IndexedMutRandom};
 
 mod arg_parse;
 mod controls;
@@ -198,51 +198,58 @@ impl Tecken {
     fn gen_new_sentence(&mut self) {
         let mut rng = rand::rng();
 
-        let num_of_lines: i32 = {
-            let usable_cols = (self.columns as i32 - 4).max(10);
-
-            // median word length in bytes
-            let median_len = {
-                if self.word_pool.is_empty() {
-                    1
-                } else {
-                    let mut lens: Vec<usize> =
-                    self.word_pool.iter().map(|w| w.len()).collect();
-                    lens.sort_unstable();
-                    let n = lens.len();
-                    if n % 2 == 1 {
-                        lens[n / 2] as i32
-                    } else {
-                        ((lens[n / 2 - 1] + lens[n / 2]) / 2) as i32
-                    }
-                }
+        // get words from word pool
+        let words: Vec<String> = {
+            let mut words = Vec::new();
+            while words.len() < self.f_word_quantity as usize {
+                let r = rng.random_range(..self.word_pool.len());
+                words.push(self.word_pool[r].clone());
             }
-                .max(1);
+            words
+        };
 
-            // +1 for the space between words
-            self.line_length = (usable_cols / (median_len + 1)).max(1);
-            (self.f_word_quantity / self.line_length).max(1)
+        // calc approx. number of lines required (only used for centering text vertically)
+        let num_of_lines: i32 = {
+            let words_len = words.concat().chars().count();
+            let n = words_len as i32 / self.rows as i32;
+            n
         };
 
         let mut exercise_text_text = String::new();
         let center_row = self.rows / 2;
         let starting_row: u16 = center_row - (num_of_lines as u16 / 2);
-        for i in 0..num_of_lines {
+        let mut lines_added: i32 = 0;
+        let max_line_len = self.columns as i32 - (self.columns as i32 / 2);
+        let mut it = words.iter();
+        let mut init = true;
+        while let Some(word) = it.next() {
             let mut line_str = Vec::new();
             let mut line_len: i32 = 0;
-            while line_len < self.columns as i32 - (self.columns as i32 / 3) {
-                if let Some(word) = self.word_pool.choose_mut(&mut rng) {
-                    line_str.push(word.to_string());
-                    line_str.push(" ".to_string());
-                    line_len += word.chars().count() as i32;
-                }
+
+            // add inital word
+            if init {
+                line_str.push(word.to_string());
+                line_str.push(" ".to_string());
+                line_len += word.chars().count() as i32;
+                init = false;
             }
+
+            // create a new line
+            while line_len < max_line_len {
+                if let Some(val) = it.next().as_deref() {
+                    line_str.push(val.to_string());
+                    line_str.push(" ".to_string());
+                }
+                line_len += word.chars().count() as i32 + 1;
+            }
+            lines_added += 1;
+
             exercise_text_text.push_str(&line_str.concat());
             line_str.pop();
             let line_str_as_string = line_str.concat();
             let pos = Pos::new(
                 self.center_line(line_str_as_string),
-                starting_row + i as u16,
+                starting_row + lines_added as u16,
             );
 
             self.exercise_text_lines.push(Line::new(line_str, pos));
